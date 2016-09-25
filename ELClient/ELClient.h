@@ -118,6 +118,7 @@ class ELClient {
      
     CallbackPacketHandler GetCallbackPacketHandler() { return callbackPacketHandler; }
     void SetCallbackPacketHandler( CallbackPacketHandler cbph ) { callbackPacketHandler = cbph; }
+    void SetReceiveBufferSize(uint16_t size);
 
     // Callback for wifi status changes. This callback must be attached before calling Sync
     FP<void, void*> wifiCb; /**< Pointer to callback function */

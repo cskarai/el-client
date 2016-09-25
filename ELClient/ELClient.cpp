@@ -13,7 +13,7 @@
 #define SLIP_ESC_END  0334    /**< ESC ESC_END means END data byte */
 #define SLIP_ESC_ESC  0335    /**< ESC ESC_ESC means ESC data byte */
 
-#define PROTOBUF_START_SIZE 128
+#define DEFAULT_SLIP_BUFFER_SIZE 128
 
 //===== Input
 
@@ -138,28 +138,21 @@ ELClientPacket *ELClient::Process() {
         if (value == SLIP_ESC_ESC) value = SLIP_ESC;
         _proto.isEsc = 0;
       }
-      if (_proto.dataLen >= _proto.bufSize) {
-        // increase buff size if possible
-        _proto.bufSize *= 2; // double the buffer size
-        _proto.buf = realloc(_proto.buf, _proto.bufSize);
-        if( _proto.buf == NULL )
-        {
-          _debug->println("Buffer overflow!");
-	  _proto.bufSize = 0;
-        }
-        else
-	{
-          _debug->print("Buffer size increased to:");
-	  _debug->println(_proto.bufSize);
-	}
-      }
-      
       if (_proto.dataLen < _proto.bufSize) {
         _proto.buf[_proto.dataLen++] = value;
      }
     }
   }
   return NULL;
+}
+
+void ELClient::SetReceiveBufferSize(uint16_t size)
+{
+  _proto.bufSize = size;
+  _proto.buf = realloc(_proto.buf, size);
+  
+  if( _proto.buf == 0 )
+    _proto.bufSize = 0;
 }
 
 //===== Output
@@ -362,8 +355,8 @@ void ELClient::Request(void) {
 @endcode
 */
 void ELClient::init() {
-  _proto.buf = malloc(PROTOBUF_START_SIZE);
-  _proto.bufSize = PROTOBUF_START_SIZE;
+  _proto.buf = malloc(DEFAULT_SLIP_BUFFER_SIZE);
+  _proto.bufSize = DEFAULT_SLIP_BUFFER_SIZE;
   _proto.dataLen = 0;
   _proto.isEsc = 0;
 }

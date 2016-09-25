@@ -13,6 +13,8 @@
 #define SLIP_ESC_END  0334    /**< ESC ESC_END means END data byte */
 #define SLIP_ESC_ESC  0335    /**< ESC ESC_ESC means ESC data byte */
 
+#define PROTOBUF_START_SIZE 128
+
 //===== Input
 
 /*! protoCompletedCb(void *res)
@@ -86,6 +88,13 @@ ELClientPacket* ELClient::protoCompletedCb(void) {
     if (resetCb != NULL) (*resetCb)();
     return NULL;
   default:
+    if( callbackPacketHandler != NULL )
+    {
+      if( callbackPacketHandler(packet) )
+        return NULL;
+    }
+
+   }
     // command (NOT IMPLEMENTED)
     if (_debugEn) _debug->println("CMD??");
     return NULL;
@@ -129,6 +138,22 @@ ELClientPacket *ELClient::Process() {
         if (value == SLIP_ESC_ESC) value = SLIP_ESC;
         _proto.isEsc = 0;
       }
+      if (_proto.dataLen >= _proto.bufSize) {
+        // increase buff size if possible
+        _proto.bufSize *= 2; // double the buffer size
+        _proto.buf = realloc(_proto.buf, _proto.bufSize);
+        if( _proto.buf == NULL )
+        {
+          _debug->println("Buffer overflow!");
+	  _proto.bufSize = 0;
+        }
+        else
+	{
+          _debug->print("Buffer size increased to:");
+	  _debug->println(_proto.bufSize);
+	}
+      }
+      
       if (_proto.dataLen < _proto.bufSize) {
         _proto.buf[_proto.dataLen++] = value;
      }
@@ -337,8 +362,8 @@ void ELClient::Request(void) {
 @endcode
 */
 void ELClient::init() {
-  _proto.buf = _protoBuf;
-  _proto.bufSize = sizeof(_protoBuf);
+  _proto.buf = malloc(PROTOBUF_START_SIZE);
+  _proto.bufSize = PROTOBUF_START_SIZE;
   _proto.dataLen = 0;
   _proto.isEsc = 0;
 }
@@ -369,7 +394,7 @@ void ELClient::init() {
 @endcode
 */
 ELClient::ELClient(Stream* serial) :
-_serial(serial) {
+_serial(serial), callbackPacketHandler(0) {
   _debugEn = false;
   init();
 }
@@ -402,7 +427,7 @@ _serial(serial) {
 @endcode
 */
 ELClient::ELClient(Stream* serial, Stream* debug) :
-_debug(debug), _serial(serial) {
+_debug(debug), _serial(serial), callbackPacketHandler(0) {
   _debugEn = true;
   init();
 }

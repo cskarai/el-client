@@ -53,7 +53,7 @@ void ledHtmlCallback(WebServerCommand command, char * data, int dataLen)
 void setup()
 {
   Serial.begin(115200);
-  webServer.registerHandler(F("/LED.html.json"), ledHtmlCallback);
+  webServer.registerHandler(F("/SimpleLED.html.json"), ledHtmlCallback);
   webServer.setup();
 }
 

@@ -7,6 +7,9 @@
  *    ESP8266 GPIO0 <--level shifter-->    Arduino RESET   (optional)
  * 
  *    Arduino LED is on PIN 13
+ * 
+ * Video:
+ *    https://www.youtube.com/watch?v=vBESCO0UhYI
  */
 
 #include <ELClient.h>

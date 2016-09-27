@@ -8,6 +8,10 @@
  *    
  *    Arduino LED is on PIN 13
  *    Connect an 1K trimmer to Arduino (voltage):  VCC <-> A0 <-> GND
+ * 
+ * 
+ * Video:
+ *    https://www.youtube.com/watch?v=vBESCO0UhYI
  */
 
 #include <ELClient.h>

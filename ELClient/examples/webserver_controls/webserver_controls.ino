@@ -29,6 +29,8 @@ void setup()
 {
   Serial.begin(115200);
   
+  esp.SetReceiveBufferSize(384);
+  
   // register the JSON URL handlers
   webServer.registerHandler(F("/LED.html.json"), ledHtmlCallback);
   webServer.registerHandler(F("/User.html.json"), userHtmlCallback);

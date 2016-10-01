@@ -35,8 +35,8 @@ typedef enum {
   CMD_REST_REQUEST,    /**< Make request to REST server */
   CMD_REST_SETHEADER,  /**< Define HTML header */
 
-  CMD_WEB_DATA = 30,   /**< used for publishing web-server data
-  CMD_WEB_REQ_CB,      /**< web-server callback
+  CMD_WEB_DATA = 30,   /**< used for publishing web-server data */
+  CMD_WEB_REQ_CB,      /**< web-server callback */
 
   CMD_SOCKET_SETUP = 40,  /**< Setup socket connection */
   CMD_SOCKET_SEND,        /**< Send socket packet */

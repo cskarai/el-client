@@ -31,15 +31,10 @@ void setup()
   
   esp.SetReceiveBufferSize(384);
   
-  // register the JSON URL handlers
-  webServer.registerHandler(F("/LED.html.json"), ledHtmlCallback);
-  webServer.registerHandler(F("/User.html.json"), userHtmlCallback);
-  webServer.registerHandler(F("/Voltage.html.json"), voltageHtmlCallback);
-  webServer.setup();
-
   ledInit();
   userInit();
   voltageInit();
+  webServer.setup();
 }
 
 static uint32_t last;

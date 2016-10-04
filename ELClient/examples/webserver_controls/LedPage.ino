@@ -26,14 +26,6 @@ typedef enum
   LOG_SET_LED_OFF,
 } LogMessage;
 
-// LED setup code
-void ledInit()
-{
-  // set mode to output and turn LED off
-  pinMode(LED_PIN, OUTPUT);
-  digitalWrite(LED_PIN, false);
-}
-
 // LED loop code
 void ledLoop()
 { 
@@ -114,106 +106,114 @@ String ledHistoryToLog()
   return str;
 }
 
-
-void ledHtmlCallback(WebServerCommand command, char * data, int dataLen)
+void ledButtonPressCb(const char * button)
 {
-  switch(command)
+  String btn = button;
+  if( btn == F("btn_on") )
   {
-    case BUTTON_PRESS:
-      {
-        String btn = data;
-        if( btn == F("btn_on") )
-        {
-          if( blinking || digitalRead(LED_PIN) == false )
-            ledAddLog(LOG_SET_LED_ON);
-          blinking = 0;
-          digitalWrite(LED_PIN, true);
-        }
-        else if( btn == F("btn_off") )
-        {
-          if( blinking || digitalRead(LED_PIN) == true )
-            ledAddLog(LOG_SET_LED_OFF);
-          blinking = 0;
-          digitalWrite(LED_PIN, false);
-        }
-        else if( btn == F("btn_blink") )
-        {
-          if( !blinking )
-            ledAddLog(LOG_SET_LED_BLINKING);
-          blinking = 1;
-          blinking_next_ts = millis() + blinking_phase;
-        }
-      }
-      break;
-    case SET_FIELD:
-      {
-        String fld = data;
-        if( fld == F("frequency") )
-        {
-          int8_t oldf = blinking_frequency;
-          blinking_frequency = webServer.getArgInt();
-
-          blinking_period = 2000 / blinking_frequency;
-          blinking_phase = blinking_duty * blinking_period / 4;
-  
-          if( oldf != blinking_frequency )
-          {
-            ledAddLog(blinking_frequency);
-            if( blinking )
-              digitalWrite(LED_PIN, false);
-          }
-        }
-        else if( fld == F("duty") )
-        {
-          int8_t oldp = blinking_duty;
-          String arg = webServer.getArgString();
-
-          if( arg == F("25_75") )
-            blinking_duty = 1;
-          else if( arg == F("50_50") )
-            blinking_duty = 2;
-          else if( arg == F("75_25") )
-            blinking_duty = 3;
-
-          if( blinking )
-            digitalWrite(LED_PIN, false);
-
-          blinking_phase = blinking_duty * blinking_period / 4;
-
-          if( oldp != blinking_duty )
-            ledAddLog(LOG_DUTY_25_75 - 1 + blinking_duty);
-        }
-      }
-      break;
-    case LOAD:
-      webServer.setArgInt(F("frequency"), blinking_frequency);
-
-      switch(blinking_duty)
-      {
-        case 1:
-          webServer.setArgString(F("duty"), F("25_75"));
-          break;
-        case 2:
-          webServer.setArgString(F("duty"), F("50_50"));
-          break;
-        case 3:
-          webServer.setArgString(F("duty"), F("75_25"));
-          break;
-      }
-    case REFRESH:
-      {
-        if( blinking )
-          webServer.setArgString(F("text"), F("LED is blinking"));
-        else
-          webServer.setArgString(F("text"), digitalRead(LED_PIN) ? F("LED is turned on") : F("LED is turned off"));
-
-        String log = ledHistoryToLog();
-        webServer.setArgJson(F("led_history"), log.begin());
-      }
-      break;
-    default:
-      break;
+    if( blinking || digitalRead(LED_PIN) == false )
+      ledAddLog(LOG_SET_LED_ON);
+    blinking = 0;
+    digitalWrite(LED_PIN, true);
+  }
+  else if( btn == F("btn_off") )
+  {
+    if( blinking || digitalRead(LED_PIN) == true )
+      ledAddLog(LOG_SET_LED_OFF);
+    blinking = 0;
+    digitalWrite(LED_PIN, false);
+  }
+  else if( btn == F("btn_blink") )
+  {
+    if( !blinking )
+      ledAddLog(LOG_SET_LED_BLINKING);
+    blinking = 1;
+    blinking_next_ts = millis() + blinking_phase;
   }
 }
 
+void ledSetFieldCb(const char * field)
+{
+  String fld = field;
+  if( fld == F("frequency") )
+  {
+    int8_t oldf = blinking_frequency;
+    blinking_frequency = webServer.getArgInt();
+
+    blinking_period = 2000 / blinking_frequency;
+    blinking_phase = blinking_duty * blinking_period / 4;
+  
+    if( oldf != blinking_frequency )
+    {
+      ledAddLog(blinking_frequency);
+      if( blinking )
+        digitalWrite(LED_PIN, false);
+    }
+  }
+  else if( fld == F("duty") )
+  {
+    int8_t oldp = blinking_duty;
+    String arg = webServer.getArgString();
+
+    if( arg == F("25_75") )
+      blinking_duty = 1;
+    else if( arg == F("50_50") )
+      blinking_duty = 2;
+    else if( arg == F("75_25") )
+      blinking_duty = 3;
+
+    if( blinking )
+      digitalWrite(LED_PIN, false);
+
+    blinking_phase = blinking_duty * blinking_period / 4;
+
+    if( oldp != blinking_duty )
+      ledAddLog(LOG_DUTY_25_75 - 1 + blinking_duty);
+  }
+}
+
+void ledRefreshCb(const char * url)
+{
+  if( blinking )
+    webServer.setArgString(F("text"), F("LED is blinking"));
+  else
+    webServer.setArgString(F("text"), digitalRead(LED_PIN) ? F("LED is turned on") : F("LED is turned off"));
+
+  String log = ledHistoryToLog();
+  webServer.setArgJson(F("led_history"), log.begin());
+}
+
+void ledLoadCb(const char * url)
+{
+  webServer.setArgInt(F("frequency"), blinking_frequency);
+
+  switch(blinking_duty)
+  {
+    case 1:
+      webServer.setArgString(F("duty"), F("25_75"));
+      break;
+    case 2:
+      webServer.setArgString(F("duty"), F("50_50"));
+      break;
+    case 3:
+      webServer.setArgString(F("duty"), F("75_25"));
+      break;
+  }
+  
+  ledRefreshCb( url );
+}
+
+// LED setup code
+void ledInit()
+{
+  // set mode to output and turn LED off
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, false);
+  
+  URLHandler *ledHandler = webServer.createURLHandler(F("/LED.html.json"));
+  ledHandler->buttonCb.attach(ledButtonPressCb);
+  ledHandler->setFieldCb.attach(ledSetFieldCb);
+  ledHandler->loadCb.attach(ledLoadCb);
+  ledHandler->refreshCb.attach(ledRefreshCb);
+}
 

@@ -22,13 +22,6 @@ uint16_t history_avg[MAX_HISTORY]; // avg
 
 uint16_t calibrate = 0x128; // calibrate this manually
 
-// page setup
-void voltageInit()
-{
-  analogReference(DEFAULT);
-  sample_count = 0;
-}
-
 // voltage measuring loop
 void voltageLoop()
 {
@@ -91,48 +84,46 @@ String floatToString(float f)
   return String(buf);
 }
 
-void voltageHtmlCallback(WebServerCommand command, char * data, int dataLen)
+void voltageRefreshCb(const char * url)
 {
-  switch(command)
+  // calculate voltage value
+  String v = floatToString((float)measured_voltage / 256.f);
+  v += " V";
+  webServer.setArgString(F("voltage"), v.begin());
+
+  char buf[20];
+  // calculate history table
+  String table = F("[[\"Time\",\"Min\",\"AVG\",\"Max\"]");
+
+  for(uint8_t i=0; i < history_cnt; i++ )
   {
-    case BUTTON_PRESS:
-      // no buttons
-      break;   
-    case SET_FIELD:
-      // no fields
-      break;
-    case LOAD:
-    case REFRESH:
-      {
-        // calculate voltage value
-	String v = floatToString((float)measured_voltage / 256.f);
-	v += " V";
-        webServer.setArgString(F("voltage"), v.begin());
+    float min_f = (float)history_min[i] / 256.f;
+    float max_f = (float)history_max[i] / 256.f;
+    float avg_f = (float)history_avg[i] / 256.f;
 
-        char buf[20];
-        // calculate history table
-        String table = F("[[\"Time\",\"Min\",\"AVG\",\"Max\"]");
-
-        for(uint8_t i=0; i < history_cnt; i++ )
-        {
-          float min_f = (float)history_min[i] / 256.f;
-          float max_f = (float)history_max[i] / 256.f;
-          float avg_f = (float)history_avg[i] / 256.f;
-
-          table += F(",[\"");
-          table += (history_ts[i] / 1000);
-          table += F(" s\",\"");
-	  table += floatToString(min_f);
-	  table += " V\",\"";
-	  table += floatToString(avg_f);
-	  table += " V\",\"";
-	  table += floatToString(max_f);
-	  table += " V\"]";
-        }
-
-        table += ']';
-        webServer.setArgJson(F("table"), table.begin());
-      }
-      break;
+    table += F(",[\"");
+    table += (history_ts[i] / 1000);
+    table += F(" s\",\"");
+    table += floatToString(min_f);
+    table += " V\",\"";
+    table += floatToString(avg_f);
+    table += " V\",\"";
+    table += floatToString(max_f);
+    table += " V\"]";
   }
+
+  table += ']';
+  webServer.setArgJson(F("table"), table.begin());
+}
+
+// page setup
+void voltageInit()
+{
+  analogReference(DEFAULT);
+  sample_count = 0;
+  
+  URLHandler *voltageHandler = webServer.createURLHandler(F("/Voltage.html.json"));
+
+  voltageHandler->loadCb.attach(voltageRefreshCb);
+  voltageHandler->refreshCb.attach(voltageRefreshCb);
 }

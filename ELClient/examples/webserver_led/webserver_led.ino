@@ -25,38 +25,32 @@ ELClient esp(&Serial, &Serial);
 // Initialize the MQTT client
 ELClientWebServer webServer(&esp);
 
-// this is the callback of web-server
-void ledHtmlCallback(WebServerCommand command, char * data, int dataLen)
+void ledPageLoadAndRefreshCb(const char * url)
 {
-  switch(command)
-  {
-    case BUTTON_PRESS: // when button is pressed
-      {
-        String id = data;
-        if( id == F("btn_on") )
-          digitalWrite(LED_PIN, true);
-        else if( id == F("btn_off") )
-          digitalWrite(LED_PIN, false);
-      }
-      break;
-    case SET_FIELD: // when a field value changes
-      // no fields to set
-      break;
-    case LOAD:      // called at first web-page loading
-    case REFRESH:   // called at web-page refresh
-      if( digitalRead(LED_PIN) )
-        webServer.setArgString(F("text"), F("LED is on"));
-      else
-        webServer.setArgString(F("text"), F("LED is off"));
-      break;
-  }
+  if( digitalRead(LED_PIN) )
+    webServer.setArgString(F("text"), F("LED is on"));
+  else
+    webServer.setArgString(F("text"), F("LED is off"));
 }
 
+void ledButtonPressCb(const char * btnId)
+{
+  String id = btnId;
+  if( id == F("btn_on") )
+    digitalWrite(LED_PIN, true);
+  else if( id == F("btn_off") )
+    digitalWrite(LED_PIN, false);
+}
 
 void setup()
 {
   Serial.begin(115200);
-  webServer.registerHandler(F("/SimpleLED.html.json"), ledHtmlCallback);
+  
+  URLHandler *ledHandler = webServer.createURLHandler(F("/SimpleLED.html.json"));
+  ledHandler->loadCb.attach(&ledPageLoadAndRefreshCb);
+  ledHandler->refreshCb.attach(&ledPageLoadAndRefreshCb);
+  ledHandler->buttonCb.attach(&ledButtonPressCb);
+
   webServer.setup();
 }
 

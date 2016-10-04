@@ -17,13 +17,6 @@ typedef enum
   WEB_JSON       // value type json
 } WebValueType;
 
-// handler descriptor
-struct _Handler
-{
-  String URL;                 // handler URL
-  WebServerCallback callback; // handler callback
-  struct _Handler * next;     // next handler
-};
 
 static ELClientWebServer * ELClientWebServer::instance = 0;
 
@@ -54,50 +47,34 @@ void ELClientWebServer::setup()
   registerCallback();
 }
 
-void ELClientWebServer::registerHandler(const char * URL, WebServerCallback callback)
+URLHandler * ELClientWebServer::createURLHandler(const char * URL)
 {
   String s = URL;
-  registerHandler(s, callback);
+  return createURLHandler(s);
 }
 
-void ELClientWebServer::registerHandler(const __FlashStringHelper * URL, WebServerCallback callback)
+URLHandler * ELClientWebServer::createURLHandler(const __FlashStringHelper * URL)
 {
   String s = URL;
-  registerHandler(s, callback);
+  return createURLHandler(s);
 }
 
-// registers a new handler
-void ELClientWebServer::registerHandler(const String &URL, WebServerCallback callback)
+URLHandler * ELClientWebServer::createURLHandler(const String &URL)
 {
-  unregisterHandler(URL);
-  
-  struct _Handler * hnd = new struct _Handler(); // "new" is used here instead of malloc to call String destructor at freeing. DOn't use malloc/free.
+  struct URL_HANDLER * hnd = new struct URL_HANDLER(); // "new" is used here instead of malloc to call String destructor at freeing. DOn't use malloc/free.
   hnd->URL = URL;             // handler URL
-  hnd->callback = callback;   // callback
   hnd->next = handlers;       // next handler
   handlers = hnd;             // change the first handler
+  return hnd;
 }
 
-void ELClientWebServer::unregisterHandler(const char * URL)
+void ELClientWebServer::destroyURLHandler(URLHandler * handler)
 {
-  String s = URL;
-  unregisterHandler(s);
-}
-
-void ELClientWebServer::unregisterHandler(const __FlashStringHelper * URL)
-{
-  String s = URL;
-  unregisterHandler(s);
-}
-
-// unregisters a previously registered handler
-void ELClientWebServer::unregisterHandler(const String &URL)
-{
-  struct _Handler *prev = 0;
-  struct _Handler *hnd = handlers;
+  struct URL_HANDLER *prev = 0;
+  struct URL_HANDLER *hnd = handlers;
   while( hnd != 0 )
   {
-    if( hnd->URL == URL )
+    if( hnd == handler )
     {
       if( prev == 0 )
         handlers = hnd->next;
@@ -105,6 +82,7 @@ void ELClientWebServer::unregisterHandler(const String &URL)
         prev->next = hnd->next;
       
       delete hnd;
+      return;
     }
     prev = hnd;
     hnd = hnd->next;
@@ -131,20 +109,15 @@ void ELClientWebServer::processPacket(ELClientPacket *packet)
 
   response.popArg(remote_ip, 4);    // remote IP address
   response.popArg(&remote_port, 2); // remote port
-  
+
   char * url;
   int urlLen = response.popArgPtr(&url);
   
-  WebServerCallback callback = 0;
-  
-  struct _Handler *hnd = handlers;
+  struct URL_HANDLER *hnd = handlers;
   while( hnd != 0 )
   {
     if( hnd->URL.length() == urlLen && memcmp( url, hnd->URL.begin(), urlLen ) == 0 )
-    {
-      callback = hnd->callback;
       break;
-    }
     hnd = hnd->next;
   }
 
@@ -157,7 +130,7 @@ void ELClientWebServer::processPacket(ELClientPacket *packet)
     _elc->_debug->println();
     return;
   }
-  
+
   switch(reason)
   {
     case WS_BUTTON: // invoked when a button pressed
@@ -169,7 +142,7 @@ void ELClientWebServer::processPacket(ELClientPacket *packet)
         memcpy(id, idPtr, idLen);
         id[idLen] = 0;
 
-        callback(BUTTON_PRESS, id, idLen);
+        hnd->buttonCb(id);
       }
       break;
     case WS_SUBMIT: // invoked when a form submitted
@@ -187,7 +160,7 @@ void ELClientWebServer::processPacket(ELClientPacket *packet)
           arg_ptr[valueLen] = 0;
           memcpy(arg_ptr, idPtr + 2 + nameLen, valueLen);
 
-          callback(SET_FIELD, idPtr+1, nameLen);
+          hnd->setFieldCb(idPtr+1);
   
           free(arg_ptr);
           arg_ptr = 0;
@@ -208,7 +181,10 @@ void ELClientWebServer::processPacket(ELClientPacket *packet)
   _elc->Request(remote_ip, 4);               // send remote IP address
   _elc->Request((uint8_t *)&remote_port, 2); // send remote port
 
-  callback( reason == WS_LOAD ? LOAD : REFRESH, NULL, 0); // send arguments
+  if( reason == WS_LOAD )
+    hnd->loadCb( hnd->URL.begin() );
+  else
+    hnd->refreshCb( hnd->URL.begin() );
 
   _elc->Request((uint8_t *)NULL, 0);         // end indicator
   _elc->Request();                           // finish packet

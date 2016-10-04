@@ -12,25 +12,6 @@
 #define EEPROM_POS_GENDER         (EEPROM_POS_AGE+1)
 #define EEPROM_POS_NOTIFICATIONS  (EEPROM_POS_GENDER+1)
 
-// initialization
-void userInit()
-{
-  uint16_t magic;
-  EEPROM.get(EEPROM_POS_MAGIC, magic);
-
-  if( magic != MAGIC ) // EEPROM is uninitialized?
-  {
-    magic = MAGIC;
-    // set default values
-    EEPROM.put(EEPROM_POS_MAGIC, magic);
-    EEPROM.update(EEPROM_POS_FIRST_NAME, 0);
-    EEPROM.update(EEPROM_POS_LAST_NAME, 0);
-    EEPROM.update(EEPROM_POS_AGE, 0);
-    EEPROM.update(EEPROM_POS_GENDER, 'f');
-    EEPROM.update(EEPROM_POS_NOTIFICATIONS, 0);
-  }
-}
-
 // write a string to EEPROM
 void userWriteStr(char * str, int ndx)
 {
@@ -52,46 +33,55 @@ void userReadStr(char * str, int ndx)
   }
 }
 
-void userHtmlCallback(WebServerCommand command, char * data, int dataLen)
+void userSetFieldCb(const char * field)
 {
-  switch(command)
+  String fld = field;
+  if( fld == F("first_name"))
+    userWriteStr(webServer.getArgString(), EEPROM_POS_FIRST_NAME);
+  else if( fld == F("last_name"))
+    userWriteStr(webServer.getArgString(), EEPROM_POS_LAST_NAME);
+  else if( fld == F("age"))
+    EEPROM.update(EEPROM_POS_AGE, (uint8_t)webServer.getArgInt());
+  else if( fld == F("gender"))
   {
-    case BUTTON_PRESS:
-      // no buttons
-      break;
-    case SET_FIELD:
-      {
-        String fld = data;
-        if( fld == F("first_name"))
-          userWriteStr(webServer.getArgString(), EEPROM_POS_FIRST_NAME);
-        else if( fld == F("last_name"))
-          userWriteStr(webServer.getArgString(), EEPROM_POS_LAST_NAME);
-        else if( fld == F("age"))
-          EEPROM.update(EEPROM_POS_AGE, (uint8_t)webServer.getArgInt());
-        else if( fld == F("gender"))
-        {
-          String gender = webServer.getArgString();
-          EEPROM.update(EEPROM_POS_GENDER, (gender == F("male")) ? 'm' : 'f');
-        }
-        else if( fld == F("notifications"))
-          EEPROM.update(EEPROM_POS_NOTIFICATIONS, webServer.getArgBoolean());
-      }
-      break;
-    case LOAD:
-      {
-        char buf[MAX_STR_LEN];
-        userReadStr( buf, EEPROM_POS_FIRST_NAME );
-        webServer.setArgString(F("first_name"), buf);
-        userReadStr( buf, EEPROM_POS_LAST_NAME );
-        webServer.setArgString(F("last_name"), buf);
-        webServer.setArgInt(F("age"), (uint8_t)EEPROM[EEPROM_POS_AGE]);
-        webServer.setArgString(F("gender"), (EEPROM[EEPROM_POS_GENDER] == 'm') ? F("male") : F("female"));
-        webServer.setArgBoolean(F("notifications"), EEPROM[EEPROM_POS_NOTIFICATIONS] != 0);
-      }
-      break;
-    case REFRESH:
-      // do nothing
-      break;
+    String gender = webServer.getArgString();
+    EEPROM.update(EEPROM_POS_GENDER, (gender == F("male")) ? 'm' : 'f');
   }
+  else if( fld == F("notifications"))
+    EEPROM.update(EEPROM_POS_NOTIFICATIONS, webServer.getArgBoolean());
 }
 
+void userLoadCb(const char * url)
+{
+  char buf[MAX_STR_LEN];
+  userReadStr( buf, EEPROM_POS_FIRST_NAME );
+  webServer.setArgString(F("first_name"), buf);
+  userReadStr( buf, EEPROM_POS_LAST_NAME );
+  webServer.setArgString(F("last_name"), buf);
+  webServer.setArgInt(F("age"), (uint8_t)EEPROM[EEPROM_POS_AGE]);
+  webServer.setArgString(F("gender"), (EEPROM[EEPROM_POS_GENDER] == 'm') ? F("male") : F("female"));
+  webServer.setArgBoolean(F("notifications"), EEPROM[EEPROM_POS_NOTIFICATIONS] != 0);
+}
+
+// initialization
+void userInit()
+{
+  uint16_t magic;
+  EEPROM.get(EEPROM_POS_MAGIC, magic);
+
+  if( magic != MAGIC ) // EEPROM is uninitialized?
+  {
+    magic = MAGIC;
+    // set default values
+    EEPROM.put(EEPROM_POS_MAGIC, magic);
+    EEPROM.update(EEPROM_POS_FIRST_NAME, 0);
+    EEPROM.update(EEPROM_POS_LAST_NAME, 0);
+    EEPROM.update(EEPROM_POS_AGE, 0);
+    EEPROM.update(EEPROM_POS_GENDER, 'f');
+    EEPROM.update(EEPROM_POS_NOTIFICATIONS, 0);
+  }
+
+  URLHandler *userPageHandler = webServer.createURLHandler(F("/User.html.json"));
+  userPageHandler->setFieldCb.attach(userSetFieldCb);
+  userPageHandler->loadCb.attach(userLoadCb);
+}

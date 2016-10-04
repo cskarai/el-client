@@ -5,19 +5,17 @@
 
 #include <Arduino.h>
 #include "ELClient.h"
+#include "FP.h"
 
-typedef enum
+typedef struct URL_HANDLER
 {
-  BUTTON_PRESS,  // called when HTML button is pressed
-  SET_FIELD,     // called when a form field is submitted
-  REFRESH,       // called at page refresh
-  LOAD,          // called at the first page load
-} WebServerCommand;
-
-// callback funtion
-typedef void (*WebServerCallback)(WebServerCommand command, char * data, int dataLen);
-
-struct _Handlers;
+  String                URL;         // the URL to handle
+  FP<void, char*>       loadCb;      // callback for HTML page loading
+  FP<void, char*>       refreshCb;   // callback for HTML page refresh
+  FP<void, char*>       setFieldCb;  // callback for setting a field from an HTML form
+  FP<void, char*>       buttonCb;    // callback for HTML button press
+  struct URL_HANDLER *  next;        // next handler
+} URLHandler;
 
 // This class implements function for web-server
 class ELClientWebServer {
@@ -28,18 +26,14 @@ public:
   // initializes the web-server
   void    setup();
   
-  // registers an URL handler
-  void    registerHandler(const char * URL, WebServerCallback callback);
-  // registers an URL handler
-  void    registerHandler(const __FlashStringHelper * URL, WebServerCallback callback);
-  // registers an URL handler
-  void    registerHandler(const String &URL, WebServerCallback callback);
-  // unregisters an URL handler
-  void    unregisterHandler(const char * URL);
-  // unregisters an URL handler
-  void    unregisterHandler(const __FlashStringHelper * URL);
-  // unregisters an URL handler
-  void    unregisterHandler(const String &URL);
+  // creates an URL handler
+  URLHandler * createURLHandler(const char * URL);
+  // creates an URL handler from flash
+  URLHandler * createURLHandler(const __FlashStringHelper * URL);
+  // creates an URL handler from String
+  URLHandler * createURLHandler(const String &s);
+  // destroys an URL handler
+  void    destroyURLHandler(URLHandler * handler);
   // notifies ESP8266, that MCU is interested in web-server callbacks
   void    registerCallback();
   
@@ -73,13 +67,13 @@ public:
   // sets float value of an HTML field
   void    setArgFloat(const __FlashStringHelper * name, float f);
 
-  // SET_FIELD: gets the value of the field as integer
+  // setFieldCb: gets the value of the field as integer
   int32_t getArgInt();
-  // SET_FIELD: gets the value of the field as string
+  // setFieldCb: gets the value of the field as string
   char *  getArgString();
-  // SET_FIELD: gets the value of the field as boolean
+  // setFieldCb: gets the value of the field as boolean
   uint8_t getArgBoolean();
-  // SET_FIELD: gets the value of the field as float
+  // setFieldCb: gets the value of the field as float
   float   getArgFloat();
 
   // returns the web-server instance
@@ -99,7 +93,7 @@ private:
   
   char *                     arg_ptr;
   
-  struct _Handler          * handlers;
+  struct URL_HANDLER        * handlers;
 };
 
 #endif // _EL_CLIENT_WEB_SERVER_H_

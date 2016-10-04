@@ -94,7 +94,6 @@ ELClientPacket* ELClient::protoCompletedCb(void) {
         return NULL;
     }
 
-   }
     // command (NOT IMPLEMENTED)
     if (_debugEn) _debug->println("CMD??");
     return NULL;

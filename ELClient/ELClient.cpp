@@ -87,13 +87,11 @@ ELClientPacket* ELClient::protoCompletedCb(void) {
     _debug->println("NEED_SYNC!");
     if (resetCb != NULL) (*resetCb)();
     return NULL;
+  case CMD_WEB_REQ_CB:
+    if( webServerCb != NULL )
+      webServerCb(packet);
+    return NULL;
   default:
-    if( callbackPacketHandler != NULL )
-    {
-      if( callbackPacketHandler(packet) )
-        return NULL;
-    }
-
     // command (NOT IMPLEMENTED)
     if (_debugEn) _debug->println("CMD??");
     return NULL;
@@ -386,7 +384,7 @@ void ELClient::init() {
 @endcode
 */
 ELClient::ELClient(Stream* serial) :
-_serial(serial), callbackPacketHandler(0) {
+_serial(serial) {
   _debugEn = false;
   init();
 }
@@ -419,7 +417,7 @@ _serial(serial), callbackPacketHandler(0) {
 @endcode
 */
 ELClient::ELClient(Stream* serial, Stream* debug) :
-_debug(debug), _serial(serial), callbackPacketHandler(0) {
+_debug(debug), _serial(serial) {
   _debugEn = true;
   init();
 }

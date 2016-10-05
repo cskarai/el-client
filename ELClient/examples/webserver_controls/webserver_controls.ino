@@ -25,11 +25,27 @@ ELClient esp(&Serial, &Serial);
 // Initialize the MQTT client
 ELClientWebServer webServer(&esp);
 
+
+// Callback made form esp-link to notify that it has just come out of a reset. This means we
+// need to initialize it!
+void resetCb(void) {
+  Serial.println("EL-Client (re-)starting!");
+  bool ok = false;
+  do {
+    ok = esp.Sync();      // sync up with esp-link, blocks for up to 2 seconds
+    if (!ok) Serial.println("EL-Client sync failed!");
+  } while(!ok);
+  Serial.println("EL-Client synced!");
+  
+  webServer.registerCallback();
+}
+
 void setup()
 {
   Serial.begin(115200);
   
   esp.SetReceiveBufferSize(384);
+  esp.resetCb = resetCb;
   
   ledInit();
   userInit();
@@ -37,18 +53,11 @@ void setup()
   webServer.setup();
 }
 
-static uint32_t last;
-
 void loop()
 {
   esp.Process();
 
   ledLoop();
   voltageLoop();
-  
-  if ((millis()-last) > 4000) {
-    webServer.registerCallback();  // just for esp-link reset: reregister callback at every 4s
-    last = millis();
-  }
 }
 

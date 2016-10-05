@@ -83,9 +83,8 @@ public:
   
 private:
   ELClient* _elc;
-  CallbackPacketHandler nextPacketHandler;
   
-  static uint8_t webServerPacketHandler(ELClientPacket * packet);
+  static void webServerPacketHandler(ELClientPacket * packet);
   static ELClientWebServer * instance;
   
   uint8_t                    remote_ip[4];

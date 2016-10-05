@@ -58,8 +58,6 @@ typedef struct {
   uint8_t isEsc;
 } ELClientProtocol; /**< Protocol structure  */
 
-typedef uint8_t (*CallbackPacketHandler)(ELClientPacket *);
-
 // The ELClient class implements the basic protocol to communicate with esp-link using SLIP.
 // The SLIP protocol just provides framing, i.e., it delineates the start and end of packets.
 // The format of each packet is dictated by ELClient and consists of a 2-byte command, a 2-byte
@@ -116,8 +114,6 @@ class ELClient {
     // Request the wifi status
     void GetWifiStatus(void);
      
-    CallbackPacketHandler GetCallbackPacketHandler() { return callbackPacketHandler; }
-    void SetCallbackPacketHandler( CallbackPacketHandler cbph ) { callbackPacketHandler = cbph; }
     void SetReceiveBufferSize(uint16_t size);
 
     // Callback for wifi status changes. This callback must be attached before calling Sync
@@ -125,13 +121,13 @@ class ELClient {
     // Callback to indicate protocol reset, typically due to esp-link resetting. The callback
     // should call Sync and perform any other callback registration afresh.
     void (*resetCb)(); /**< Pointer to callback function */
+    void (*webServerCb)(ELClientPacket*) = 0; /**< Pointer to callback function */
 
   //private:
     Stream* _serial; /**< Serial stream for communication with ESP */
     boolean _debugEn; /**< Flag for debug - True = enabled, False = disabled */
     uint16_t crc; /**< CRC checksum */
     ELClientProtocol _proto; /**< Protocol structure */
-    CallbackPacketHandler callbackPacketHandler;
 
     void init();
     void DBG(const char* info);

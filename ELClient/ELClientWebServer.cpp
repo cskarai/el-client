@@ -22,23 +22,14 @@ static ELClientWebServer * ELClientWebServer::instance = 0;
 
 ELClientWebServer::ELClientWebServer(ELClient* elc) :_elc(elc),handlers(0), arg_ptr(0) {
   // save the current packet handler and register a new one
-  nextPacketHandler = _elc->GetCallbackPacketHandler();
-  _elc->SetCallbackPacketHandler(ELClientWebServer::webServerPacketHandler);
+  _elc->webServerCb = ELClientWebServer::webServerPacketHandler;
   instance = this;
 }
 
 // packet handler for web-server
-static uint8_t ELClientWebServer::webServerPacketHandler(ELClientPacket * packet)
+static void ELClientWebServer::webServerPacketHandler(ELClientPacket * packet)
 {
-  if( packet->cmd == CMD_WEB_REQ_CB )
-  {
-    ELClientWebServer::getInstance()->processPacket(packet);
-    return 1; // packet handled
-  }
-  else if( ELClientWebServer::getInstance()->nextPacketHandler != 0 )
-    return ELClientWebServer::getInstance()->nextPacketHandler(packet); // push to the next packet handler
-    
-  return 0; // packet was not handled
+  ELClientWebServer::getInstance()->processPacket(packet);
 }
 
 // initialization
@@ -138,6 +129,7 @@ void ELClientWebServer::processPacket(ELClientPacket *packet)
         char * idPtr;
         int idLen = response.popArgPtr(&idPtr);
   
+        // add terminating 0
         char id[idLen+1];
         memcpy(id, idPtr, idLen);
         id[idLen] = 0;
@@ -156,6 +148,7 @@ void ELClientWebServer::processPacket(ELClientPacket *packet)
           int nameLen = strlen(idPtr+1);
           int valueLen = idLen - nameLen -2;
 
+          // add terminating 0
           arg_ptr = (char *)malloc(valueLen+1);
           arg_ptr[valueLen] = 0;
           memcpy(arg_ptr, idPtr + 2 + nameLen, valueLen);
@@ -177,7 +170,7 @@ void ELClientWebServer::processPacket(ELClientPacket *packet)
   
   // the response is generated here with the fields to refresh
 
-  _elc->Request(CMD_WEB_DATA, 100, 255);     // 255 arguments (can't foretell, so use maximum)
+  _elc->Request(CMD_WEB_DATA, 100, VARIABLE_ARG_NUM);
   _elc->Request(remote_ip, 4);               // send remote IP address
   _elc->Request((uint8_t *)&remote_port, 2); // send remote port
 

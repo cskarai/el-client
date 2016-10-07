@@ -22,20 +22,15 @@ static ELClientWebServer * ELClientWebServer::instance = 0;
 
 ELClientWebServer::ELClientWebServer(ELClient* elc) :_elc(elc),handlers(0), arg_ptr(0) {
   // save the current packet handler and register a new one
-  _elc->webServerCb = ELClientWebServer::webServerPacketHandler;
   instance = this;
+  
+  webServerCb.attach(&ELClientWebServer::webServerPacketHandler);
 }
 
 // packet handler for web-server
-static void ELClientWebServer::webServerPacketHandler(ELClientPacket * packet)
+static void ELClientWebServer::webServerPacketHandler(void * response)
 {
-  ELClientWebServer::getInstance()->processPacket(packet);
-}
-
-// initialization
-void ELClientWebServer::setup()
-{
-  registerCallback();
+  ELClientWebServer::getInstance()->processResponse((ELClientResponse*)response);
 }
 
 URLHandler * ELClientWebServer::createURLHandler(const char * URL)
@@ -80,29 +75,29 @@ void ELClientWebServer::destroyURLHandler(URLHandler * handler)
   }
 }
 
-void ELClientWebServer::registerCallback()
+// initialization
+void ELClientWebServer::setup()
 {
   // WebServer doesn't send messages to MCU only if asked
   // register here to the web callback
   // periodic reregistration is required in case of ESP8266 reset
-  _elc->Request(CMD_CB_ADD, 100, 1);
-  _elc->Request(F("webCb"), 5);
+  _elc->Request(CMD_WEB_SETUP, 0, 1);
+  uint32_t cb = &webServerCb;
+  _elc->Request(&cb, 4);
   _elc->Request();
 }
 
-void ELClientWebServer::processPacket(ELClientPacket *packet)
+void ELClientWebServer::processResponse(ELClientResponse *response)
 {
-  ELClientResponse response(packet);
-
   uint16_t shrt;
-  response.popArg(&shrt, 2);
+  response->popArg(&shrt, 2);
   RequestReason reason = (RequestReason)shrt; // request reason
 
-  response.popArg(remote_ip, 4);    // remote IP address
-  response.popArg(&remote_port, 2); // remote port
+  response->popArg(remote_ip, 4);    // remote IP address
+  response->popArg(&remote_port, 2); // remote port
 
   char * url;
-  int urlLen = response.popArgPtr(&url);
+  int urlLen = response->popArgPtr(&url);
   
   struct URL_HANDLER *hnd = handlers;
   while( hnd != 0 )
@@ -127,7 +122,7 @@ void ELClientWebServer::processPacket(ELClientPacket *packet)
     case WS_BUTTON: // invoked when a button pressed
       {
         char * idPtr;
-        int idLen = response.popArgPtr(&idPtr);
+        int idLen = response->popArgPtr(&idPtr);
   
         // add terminating 0
         char id[idLen+1];
@@ -141,10 +136,10 @@ void ELClientWebServer::processPacket(ELClientPacket *packet)
       {
         int cnt = 4;
 
-        while( cnt < response.argc() )
+        while( cnt < response->argc() )
         {
           char * idPtr;
-          int idLen = response.popArgPtr(&idPtr);
+          int idLen = response->popArgPtr(&idPtr);
           int nameLen = strlen(idPtr+1);
           int valueLen = idLen - nameLen -2;
 

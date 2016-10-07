@@ -13,8 +13,6 @@
 #define SLIP_ESC_END  0334    /**< ESC ESC_END means END data byte */
 #define SLIP_ESC_ESC  0335    /**< ESC ESC_ESC means ESC data byte */
 
-#define DEFAULT_SLIP_BUFFER_SIZE 128
-
 //===== Input
 
 /*! protoCompletedCb(void *res)
@@ -87,10 +85,6 @@ ELClientPacket* ELClient::protoCompletedCb(void) {
     _debug->println("NEED_SYNC!");
     if (resetCb != NULL) (*resetCb)();
     return NULL;
-  case CMD_WEB_REQ_CB:
-    if( webServerCb != NULL )
-      webServerCb(packet);
-    return NULL;
   default:
     // command (NOT IMPLEMENTED)
     if (_debugEn) _debug->println("CMD??");
@@ -141,15 +135,6 @@ ELClientPacket *ELClient::Process() {
     }
   }
   return NULL;
-}
-
-void ELClient::SetReceiveBufferSize(uint16_t size)
-{
-  _proto.bufSize = size;
-  _proto.buf = realloc(_proto.buf, size);
-  
-  if( _proto.buf == 0 )
-    _proto.bufSize = 0;
 }
 
 //===== Output
@@ -352,8 +337,8 @@ void ELClient::Request(void) {
 @endcode
 */
 void ELClient::init() {
-  _proto.buf = malloc(DEFAULT_SLIP_BUFFER_SIZE);
-  _proto.bufSize = DEFAULT_SLIP_BUFFER_SIZE;
+  _proto.buf = _protoBuf;
+  _proto.bufSize = sizeof(_protoBuf);
   _proto.dataLen = 0;
   _proto.isEsc = 0;
 }

@@ -34,8 +34,6 @@ public:
   URLHandler * createURLHandler(const String &s);
   // destroys an URL handler
   void    destroyURLHandler(URLHandler * handler);
-  // notifies ESP8266, that MCU is interested in web-server callbacks
-  void    registerCallback();
   
   // sets int value of an HTML field
   void    setArgInt(const char * name, int32_t value);
@@ -79,12 +77,11 @@ public:
   // returns the web-server instance
   static ELClientWebServer * getInstance() { return instance; }
   
-  void processPacket(ELClientPacket *packet); // internal
-  
 private:
   ELClient* _elc;
   
-  static void webServerPacketHandler(ELClientPacket * packet);
+  static void webServerPacketHandler(void * packet);
+  void processResponse(ELClientResponse *packet); // internal
   static ELClientWebServer * instance;
   
   uint8_t                    remote_ip[4];
@@ -92,7 +89,9 @@ private:
   
   char *                     arg_ptr;
   
-  struct URL_HANDLER        * handlers;
+  FP<void, void*>            webServerCb;
+  
+  struct URL_HANDLER       * handlers;
 };
 
 #endif // _EL_CLIENT_WEB_SERVER_H_

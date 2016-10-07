@@ -35,8 +35,8 @@ typedef enum {
   CMD_REST_REQUEST,    /**< Make request to REST server */
   CMD_REST_SETHEADER,  /**< Define HTML header */
 
-  CMD_WEB_DATA = 30,   /**< used for publishing web-server data */
-  CMD_WEB_REQ_CB,      /**< web-server callback */
+  CMD_WEB_SETUP = 30,  /**< web-server setup */
+  CMD_WEB_DATA,        /**< used for publishing web-server data */
 
   CMD_SOCKET_SETUP = 40,  /**< Setup socket connection */
   CMD_SOCKET_SEND,        /**< Send socket packet */
@@ -113,21 +113,19 @@ class ELClient {
     boolean Sync(uint32_t timeout=ESP_TIMEOUT);
     // Request the wifi status
     void GetWifiStatus(void);
-     
-    void SetReceiveBufferSize(uint16_t size);
 
     // Callback for wifi status changes. This callback must be attached before calling Sync
     FP<void, void*> wifiCb; /**< Pointer to callback function */
     // Callback to indicate protocol reset, typically due to esp-link resetting. The callback
     // should call Sync and perform any other callback registration afresh.
     void (*resetCb)(); /**< Pointer to callback function */
-    void (*webServerCb)(ELClientPacket*) = 0; /**< Pointer to callback function */
 
   //private:
     Stream* _serial; /**< Serial stream for communication with ESP */
     boolean _debugEn; /**< Flag for debug - True = enabled, False = disabled */
     uint16_t crc; /**< CRC checksum */
     ELClientProtocol _proto; /**< Protocol structure */
+    uint8_t _protoBuf[128]; /**< Protocol buffer */
 
     void init();
     void DBG(const char* info);

@@ -24,6 +24,7 @@ void userWriteStr(char * str, int ndx)
   EEPROM.update(ndx + MAX_STR_LEN - 1, 0);
 }
 
+
 // read a string from EEPROM
 void userReadStr(char * str, int ndx)
 {
@@ -33,6 +34,12 @@ void userReadStr(char * str, int ndx)
   }
 }
 
+
+// setting the value of a field
+//
+// handle data as fast as possible
+// - huge HTML forms can arrive in multiple packets
+// - if this method is slow, UART receive buffer may overrun
 void userSetFieldCb(const char * field)
 {
   String fld = field;
@@ -51,6 +58,7 @@ void userSetFieldCb(const char * field)
     EEPROM.update(EEPROM_POS_NOTIFICATIONS, webServer.getArgBoolean());
 }
 
+// called at page loading
 void userLoadCb(const char * url)
 {
   char buf[MAX_STR_LEN];

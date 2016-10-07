@@ -18,8 +18,10 @@
 #include <ELClientWebServer.h>
 #include "Pages.h"
 
-// Initialize a connection to esp-link using the normal hardware serial port both for
-// SLIP and for debug messages.
+// Initialize a connection to esp-link using the normal hardware serial port
+//
+// DEBUG is disasbled as
+// - packet logging is slow and UART receive buffer can overrun (HTML form submission)
 ELClient esp(&Serial, &Serial);
 
 // Initialize the MQTT client
@@ -37,20 +39,20 @@ void resetCb(void) {
   } while(!ok);
   Serial.println("EL-Client synced!");
   
-  webServer.registerCallback();
+  webServer.setup();
 }
 
 void setup()
 {
   Serial.begin(115200);
   
-  esp.SetReceiveBufferSize(384);
   esp.resetCb = resetCb;
   
   ledInit();
   userInit();
   voltageInit();
-  webServer.setup();
+
+  resetCb();
 }
 
 void loop()

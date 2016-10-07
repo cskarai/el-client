@@ -106,6 +106,7 @@ String ledHistoryToLog()
   return str;
 }
 
+// called at button pressing
 void ledButtonPressCb(const char * button)
 {
   String btn = button;
@@ -132,6 +133,11 @@ void ledButtonPressCb(const char * button)
   }
 }
 
+// setting the value of a field
+//
+// handle data as fast as possible
+// - huge HTML forms can arrive in multiple packets
+// - if this method is slow, UART receive buffer may overrun
 void ledSetFieldCb(const char * field)
 {
   String fld = field;
@@ -172,6 +178,7 @@ void ledSetFieldCb(const char * field)
   }
 }
 
+// called at page refreshing
 void ledRefreshCb(const char * url)
 {
   if( blinking )
@@ -183,6 +190,7 @@ void ledRefreshCb(const char * url)
   webServer.setArgJson(F("led_history"), log.begin());
 }
 
+// called at page loading
 void ledLoadCb(const char * url)
 {
   webServer.setArgInt(F("frequency"), blinking_frequency);

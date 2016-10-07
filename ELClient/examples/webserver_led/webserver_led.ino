@@ -18,9 +18,11 @@
 // flash LED on PIN 13
 #define LED_PIN 13
 
-// Initialize a connection to esp-link using the normal hardware serial port both for
-// SLIP and for debug messages.
-ELClient esp(&Serial, &Serial);
+// Initialize a connection to esp-link using the normal hardware serial port
+//
+// DEBUG is disasbled as
+// - packet logging is slow and UART receive buffer can overrun (HTML form submission)
+ELClient esp(&Serial);
 
 // Initialize the MQTT client
 ELClientWebServer webServer(&esp);
@@ -53,7 +55,7 @@ void resetCb(void) {
   } while(!ok);
   Serial.println("EL-Client synced!");
   
-  webServer.registerCallback();
+  webServer.setup();
 }
 
 void setup()
@@ -65,8 +67,8 @@ void setup()
   ledHandler->refreshCb.attach(&ledPageLoadAndRefreshCb);
   ledHandler->buttonCb.attach(&ledButtonPressCb);
 
-  webServer.setup();
   esp.resetCb = resetCb;
+  resetCb();
 }
 
 void loop()

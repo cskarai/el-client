@@ -166,9 +166,9 @@ public:
   float   getArgFloat();
 
 
-  /*! getInstance()
+  /*! ELClientWebServer::getInstance()
   @brief Returns the singleton web-server instance.
-  @details Web-Server is a singleton object. This object can be read by calling getInstance() of web-server.
+  @details Web-Server is a singleton object. This object can be read by calling ELClientWebServer::getInstance().
   @returns 
     The singleton web-server instance.
   @par Example code

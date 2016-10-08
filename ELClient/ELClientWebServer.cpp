@@ -82,7 +82,7 @@ static void ELClientWebServer::webServerPacketHandler(void * response)
 	void setup()
 	{
 	  ...
-	  URLHandler *handler = webServer.createURLHandler(F("/mypage.html.json"));
+	  URLHandler *handler = webServer.createURLHandler("/mypage.html.json");
 	  handler->loadCb.attach(&myLoadCb);
 	  handler->refreshCb.attach(&myRefreshCb);
 	  handler->buttonCb.attach(&myButtonPressCb);
@@ -172,7 +172,8 @@ URLHandler * ELClientWebServer::createURLHandler(const __FlashStringHelper * URL
 	void setup()
 	{
 	  ...
-	  URLHandler *handler = webServer.createURLHandler(F("/mypage.html.json"));
+	  String url = F("/mypage.html.json");
+	  URLHandler *handler = webServer.createURLHandler(url);
 	  handler->loadCb.attach(&myLoadCb);
 	  handler->refreshCb.attach(&myRefreshCb);
 	  handler->buttonCb.attach(&myButtonPressCb);
@@ -229,7 +230,7 @@ void ELClientWebServer::destroyURLHandler(URLHandler * handler)
 
 /*! setup()
 @brief Initializes web-server.
-@details Initialization means to subscribe Web-Server callback of Esp-Link.
+@details Initialization means to subscribe to Web-Server callback of Esp-Link.
 @par Example code
 @code
 	void resetCb(void) {
@@ -1011,8 +1012,8 @@ void ELClientWebServer::setArgFloat(const __FlashStringHelper * name, float valu
 }
 
 /*! getArgInt()
-@brief Returns an HTML fields value as integer
-@details Returns an HTML fields value as integer. This method is used at setFieldCb. WebServer doesn't know the type of a field, every field arrives as string. 
+@brief Returns an HTML field value as integer
+@details Returns an HTML field value as integer. This method is used at setFieldCb. WebServer doesn't know the type of a field, every field arrives as string. 
 	This method converts the string to the expected type. Don't call this method outside of setFieldCb, otherwise it can reset/crash/freeze MCU.
 @return Integer value of the field
 @warning Use this method only in setFieldCb, otherwise crash, freeze, MCU reset, or other unexpected behaviour can happen.
@@ -1038,8 +1039,8 @@ int32_t ELClientWebServer::getArgInt()
 }
 
 /*! getArgString()
-@brief Returns an HTML fields value as string
-@details Returns an HTML fields value as string. Don't call this method outside of setFieldCb, otherwise it can reset/crash/freeze MCU.
+@brief Returns an HTML field value as string
+@details Returns an HTML field value as string. Don't call this method outside of setFieldCb, otherwise it can reset/crash/freeze MCU.
 @return String value of the field
 @warning Use this method only in setFieldCb, otherwise crash, freeze, MCU reset, or other unexpected behaviour can happen.
 @par Example
@@ -1064,8 +1065,8 @@ char * ELClientWebServer::getArgString()
 }
 
 /*! getArgBoolean()
-@brief Returns an HTML fields value as boolean
-@details Returns an HTML fields value as boolean. This method is used at setFieldCb. WebServer doesn't know the type of a field, every field arrives as string. 
+@brief Returns an HTML field value as boolean
+@details Returns an HTML field value as boolean. This method is used at setFieldCb. WebServer doesn't know the type of a field, every field arrives as string. 
 	This method converts the string to the expected type. Don't call this method outside of setFieldCb, otherwise it can reset/crash/freeze MCU.
 @return Boolean value of the field
 @warning Use this method only in setFieldCb, otherwise crash, freeze, MCU reset, or other unexpected behaviour can happen.
@@ -1099,8 +1100,8 @@ uint8_t ELClientWebServer::getArgBoolean()
 }
 
 /*! getArgFloat()
-@brief Returns an HTML fields value as float
-@details Returns an HTML fields value as float. This method is used at setFieldCb. WebServer doesn't know the type of a field, every field arrives as string. 
+@brief Returns an HTML field value as float
+@details Returns an HTML field value as float. This method is used at setFieldCb. WebServer doesn't know the type of a field, every field arrives as string. 
 	This method converts the string to the expected type. Don't call this method outside of setFieldCb, otherwise it can reset/crash/freeze MCU.
 @return Float value of the field
 @warning Use this method only in setFieldCb, otherwise crash, freeze, MCU reset, or other unexpected behaviour can happen.

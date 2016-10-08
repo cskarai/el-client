@@ -1,3 +1,6 @@
+/*! \file ELClientWebServer.cpp
+    \brief Constructor and functions for ELClientWebServer
+*/
 #include "ELClientWebServer.h"
 
 typedef enum {
@@ -20,6 +23,23 @@ typedef enum
 
 static ELClientWebServer * ELClientWebServer::instance = 0;
 
+
+/*! ELClientWebServer(ELClient* elClient)
+@brief Creates a Web-Server instance.
+@details This method creates a web-server object.
+@param elClient
+	Reference to ELClient object.
+@par Example code
+@code
+	// Initialize a connection to esp-link using the normal hardware serial port
+	// DEBUG is disabled because of performance reasons
+	ELClient esp(&Serial);
+	
+	// Initialize the Web-Server client
+	ELClientWebServer webServer(&esp);
+@endcode
+*/
+
 ELClientWebServer::ELClientWebServer(ELClient* elc) :_elc(elc),handlers(0), arg_ptr(0) {
   // save the current packet handler and register a new one
   instance = this;
@@ -33,17 +53,134 @@ static void ELClientWebServer::webServerPacketHandler(void * response)
   ELClientWebServer::getInstance()->processResponse((ELClientResponse*)response);
 }
 
+
+/*! createURLHandler(const char * URL)
+@brief Creates and registers an URL handler.
+@details This method is responsible for creating and registering an URL handler object.
+@param URL
+	The URL the handler handles. URL is "/" + the HTML file name + ".json".
+@returns
+	The created URLHandler object.
+@par Example code
+@code
+	void myLoadCb(char * url) {
+	  ...
+	}
+	
+	void myRefreshCb(char * url) {
+	  ...
+	}
+	
+	void myButtonPressCb(char * button_id) {
+	  ...
+	}
+	
+	void mySetFieldCb(char * field_id) {
+	  ...
+	}
+	
+	void setup()
+	{
+	  ...
+	  URLHandler *handler = webServer.createURLHandler(F("/mypage.html.json"));
+	  handler->loadCb.attach(&myLoadCb);
+	  handler->refreshCb.attach(&myRefreshCb);
+	  handler->buttonCb.attach(&myButtonPressCb);
+	  handler->setFieldCb.attach(&mySetFieldCb);
+	  ...
+	}
+@endcode
+*/
+
 URLHandler * ELClientWebServer::createURLHandler(const char * URL)
 {
   String s = URL;
   return createURLHandler(s);
 }
 
+
+/*! createURLHandler(const __FlashStringHelper * URL)
+@brief Creates and registers an URL handler.
+@details This method is responsible for creating and registering an URL handler object.
+@param URL
+	The URL the handler handles. URL is "/" + the HTML file name + ".json".
+@returns
+	The created URLHandler object.
+@par Example code
+@code
+	void myLoadCb(char * url) {
+	  ...
+	}
+	
+	void myRefreshCb(char * url) {
+	  ...
+	}
+	
+	void myButtonPressCb(char * button_id) {
+	  ...
+	}
+	
+	void mySetFieldCb(char * field_id) {
+	  ...
+	}
+	
+	void setup()
+	{
+	  ...
+	  URLHandler *handler = webServer.createURLHandler(F("/mypage.html.json"));
+	  handler->loadCb.attach(&myLoadCb);
+	  handler->refreshCb.attach(&myRefreshCb);
+	  handler->buttonCb.attach(&myButtonPressCb);
+	  handler->setFieldCb.attach(&mySetFieldCb);
+	  ...
+	}
+@endcode
+*/
+
 URLHandler * ELClientWebServer::createURLHandler(const __FlashStringHelper * URL)
 {
   String s = URL;
   return createURLHandler(s);
 }
+
+
+/*! createURLHandler(const String &URL)
+@brief Creates and registers an URL handler.
+@details This method is responsible for creating and registering an URL handler object.
+@param URL
+	The URL the handler handles. URL is "/" + the HTML file name + ".json".
+@returns
+	The created URLHandler object.
+@par Example code
+@code
+	void myLoadCb(char * url) {
+	  ...
+	}
+	
+	void myRefreshCb(char * url) {
+	  ...
+	}
+	
+	void myButtonPressCb(char * button_id) {
+	  ...
+	}
+	
+	void mySetFieldCb(char * field_id) {
+	  ...
+	}
+	
+	void setup()
+	{
+	  ...
+	  URLHandler *handler = webServer.createURLHandler(F("/mypage.html.json"));
+	  handler->loadCb.attach(&myLoadCb);
+	  handler->refreshCb.attach(&myRefreshCb);
+	  handler->buttonCb.attach(&myButtonPressCb);
+	  handler->setFieldCb.attach(&mySetFieldCb);
+	  ...
+	}
+@endcode
+*/
 
 URLHandler * ELClientWebServer::createURLHandler(const String &URL)
 {
@@ -53,6 +190,20 @@ URLHandler * ELClientWebServer::createURLHandler(const String &URL)
   handlers = hnd;             // change the first handler
   return hnd;
 }
+
+
+/*! destroyURLHandler(URLHandler * handler)
+@brief Unregisters an destroys an URL handler.
+@details This method is responsible destroying an URL handler object.
+@param handler
+	The handler to destroy.
+@par Example code
+@code
+	URLHandler *handler = ...
+	 
+	destroyURLHandler(handler);
+@endcode
+*/
 
 void ELClientWebServer::destroyURLHandler(URLHandler * handler)
 {
@@ -75,7 +226,40 @@ void ELClientWebServer::destroyURLHandler(URLHandler * handler)
   }
 }
 
-// initialization
+
+/*! setup()
+@brief Initializes web-server.
+@details Initialization means to subscribe Web-Server callback of Esp-Link.
+@par Example code
+@code
+	void resetCb(void) {
+	  Serial.println("EL-Client (re-)starting!");
+	  bool ok = false;
+	  do {
+	    ok = esp.Sync();      // sync up with esp-link, blocks for up to 2 seconds
+	    if (!ok) Serial.println("EL-Client sync failed!");
+	  } while(!ok);
+	  Serial.println("EL-Client synced!");
+	  
+	  webServer.setup();
+	}
+	
+	void setup()
+	{
+	  Serial.begin(115200);
+	  
+	  URLHandler *handler = webServer.createURLHandler(F("/mypage.html.json"));
+	  handler->loadCb.attach(&myLoadCb);
+	  handler->refreshCb.attach(&myRefreshCb);
+	  handler->buttonCb.attach(&myButtonPressCb);
+	  handler->setFieldCb.attach(&mySetFieldCb);
+	  
+	  esp.resetCb = resetCb;
+	  resetCb();
+	}
+@endcode
+*/
+
 void ELClientWebServer::setup()
 {
   // WebServer doesn't send messages to MCU only if asked
@@ -178,7 +362,41 @@ void ELClientWebServer::processResponse(ELClientResponse *response)
   _elc->Request();                           // finish packet
 }
 
-
+/*! setArgJson(const char * name, const char * value)
+@brief Sets JSON value of a field
+@details Sets JSON value to display an HTML field (list, table).
+@param name
+	The name of the field
+@param value 
+	JSON value
+@par Supported HTML controls
+@li  UL
+@li  OL
+@li  TABLE
+@warning Use this method only in refreshCb/loadCb.
+@par Example List HTML
+@code
+	<UL id="list"/>
+@endcode
+@par Example List code
+@code
+	void refreshCb(const char * url)
+	{
+		webServer.setArgJson( "list", "[\"A\",\"B\",\"C\"]" );
+	}
+@endcode
+@par Example Table HTML
+@code
+	<TABLE id="table"/>
+@endcode
+@par Example Table code
+@code
+	void refreshCb(const char * url)
+	{
+		webServer.setArgJson( "table", "[[\"A\",\"B\"],[\"1\",\"2\"]]" );
+	}
+@endcode
+*/
 void ELClientWebServer::setArgJson(const char * name, const char * value)
 {
   uint8_t nlen = strlen(name);
@@ -190,6 +408,41 @@ void ELClientWebServer::setArgJson(const char * name, const char * value)
   _elc->Request(buf, nlen+vlen+2);
 }
 
+/*! setArgJson(const __FlashStringHelper * name, const __FlashStringHelper * value)
+@brief Sets JSON value of a field
+@details Sets JSON value to display an HTML field (list, table). It can free up RAM memory if string constants are stored in flash instead of RAM.
+@param name
+	The name of the field (stored in flash)
+@param value 
+	JSON value (stored in flash)
+@par Supported HTML controls
+@li  UL
+@li  OL
+@li  TABLE
+@warning Use this method only in refreshCb/loadCb.
+@par Example List HTML
+@code
+	<UL id="list"/>
+@endcode
+@par Example List code
+@code
+	void refreshCb(const char * url)
+	{
+		webServer.setArgJson( F("list"), F("[\"A\",\"B\",\"C\"]") );
+	}
+@endcode
+@par Example Table HTML
+@code
+	<TABLE id="table"/>
+@endcode
+@par Example Table code
+@code
+	void refreshCb(const char * url)
+	{
+		webServer.setArgJson( F("table"), F("[[\"A\",\"B\"],[\"1\",\"2\"]]") );
+	}
+@endcode
+*/
 void ELClientWebServer::setArgJson(const __FlashStringHelper * name, const __FlashStringHelper * value)
 {
   const char * name_p = reinterpret_cast<const char *>(name);
@@ -204,6 +457,42 @@ void ELClientWebServer::setArgJson(const __FlashStringHelper * name, const __Fla
   _elc->Request(buf, nlen+vlen+2);
 }
 
+
+/*! setArgJson(const __FlashStringHelper * name, const char * value)
+@brief Sets JSON value of a field
+@details Sets JSON value to display an HTML field (list, table). It can free up RAM memory if string constants are stored in flash instead of RAM.
+@param name
+	The name of the field (stored in flash)
+@param value 
+	JSON value
+@par Supported HTML controls
+@li  UL
+@li  OL
+@li  TABLE
+@warning Use this method only in refreshCb/loadCb.
+@par Example List HTML
+@code
+	<UL id="list"/>
+@endcode
+@par Example List code
+@code
+	void refreshCb(const char * url)
+	{
+		webServer.setArgJson( F("list"), "[\"A\",\"B\",\"C\"]" );
+	}
+@endcode
+@par Example Table HTML
+@code
+	<TABLE id="table"/>
+@endcode
+@par Example Table code
+@code
+	void refreshCb(const char * url)
+	{
+		webServer.setArgJson( F("table"), "[[\"A\",\"B\"],[\"1\",\"2\"]]" );
+	}
+@endcode
+*/
 void ELClientWebServer::setArgJson(const __FlashStringHelper * name, const char * value)
 {
   const char * name_p = reinterpret_cast<const char *>(name);
@@ -218,6 +507,56 @@ void ELClientWebServer::setArgJson(const __FlashStringHelper * name, const char 
 }
 
 
+/*! setArgString(const char * name, const char * value)
+@brief Sets string value of a field
+@details Sets the string or inner HTML value of an HTML field.
+@param name
+	The name of the field
+@param value 
+	String value
+@par Supported HTML controls
+
+| *HTML Field* |    *Type*    |
+|--------------|--------------|
+|       P      | Inner HTML   |
+|      DIV     | Inner HTML   |
+|      TR      | Inner HTML   |
+|      TH      | Inner HTML   |
+|      TD      | Inner HTML   |
+|   TEXTAREA   | Inner HTML   |
+|     SPAN     | Inner HTML   |
+|    INPUT     | String value |
+|    SELECT    | String value |
+
+@warning Use this method only in refreshCb/loadCb.
+@par Example for inner HTML (HTML)
+@code
+	<DIV id="div"/>
+@endcode
+@par Example for inner HTML (code)
+@code
+	void refreshCb(const char * url)
+	{
+		webServer.setArgString( "div", "Line 1 <br/> Line 2" );
+	}
+@endcode
+@par Example for string value (HTML)
+@code
+	<form>
+		<input name="input" type="text"/>
+		<input type="submit">
+	</form>
+@endcode
+@par Example for string value (code)
+@code
+	void loadCb(const char * url)
+	{
+		// sets the default value at loading
+		webServer.setArgString( "input", "This is the value" );
+	}
+@endcode
+*/
+
 void ELClientWebServer::setArgString(const char * name, const char * value)
 {
   uint8_t nlen = strlen(name);
@@ -228,6 +567,56 @@ void ELClientWebServer::setArgString(const char * name, const char * value)
   strcpy(buf+2+nlen, value);
   _elc->Request(buf, nlen+vlen+2);
 }
+
+/*! setArgString(const __FlashStringHelper * name, const __FlashStringHelper * value)
+@brief Sets string value of a field
+@details Sets the string or inner HTML value of an HTML field. It can free up RAM memory if string constants are stored in flash instead of RAM.
+@param name
+	The name of the field (stored in flash)
+@param value 
+	String value (stored in flash)
+@par Supported HTML controls
+
+| *HTML Field* |    *Type*    |
+|--------------|--------------|
+|       P      | Inner HTML   |
+|      DIV     | Inner HTML   |
+|      TR      | Inner HTML   |
+|      TH      | Inner HTML   |
+|      TD      | Inner HTML   |
+|   TEXTAREA   | Inner HTML   |
+|     SPAN     | Inner HTML   |
+|    INPUT     | String value |
+|    SELECT    | String value |
+
+@warning Use this method only in refreshCb/loadCb.
+@par Example for inner HTML (HTML)
+@code
+	<DIV id="div"/>
+@endcode
+@par Example for inner HTML (code)
+@code
+	void refreshCb(const char * url)
+	{
+		webServer.setArgString( F("div"), F("Line 1 <br/> Line 2") );
+	}
+@endcode
+@par Example for string value (HTML)
+@code
+	<form>
+		<input name="input" type="text"/>
+		<input type="submit">
+	</form>
+@endcode
+@par Example for string value (code)
+@code
+	void loadCb(const char * url)
+	{
+		// sets the default value at loading
+		webServer.setArgString( F("input"), F("This is the value") );
+	}
+@endcode
+*/
 
 void ELClientWebServer::setArgString(const __FlashStringHelper * name, const __FlashStringHelper * value)
 {
@@ -243,6 +632,55 @@ void ELClientWebServer::setArgString(const __FlashStringHelper * name, const __F
   _elc->Request(buf, nlen+vlen+2);
 }
 
+/*! setArgString(const __FlashStringHelper * name, const char * value)
+@brief Sets string value of a field
+@details Sets the string or inner HTML value of an HTML field. It can free up RAM memory if string constants are stored in flash instead of RAM.
+@param name
+	The name of the field (stored in flash)
+@param value 
+	String value
+@par Supported HTML controls
+
+| *HTML Field* |    *Type*    |
+|--------------|--------------|
+|       P      | Inner HTML   |
+|      DIV     | Inner HTML   |
+|      TR      | Inner HTML   |
+|      TH      | Inner HTML   |
+|      TD      | Inner HTML   |
+|   TEXTAREA   | Inner HTML   |
+|     SPAN     | Inner HTML   |
+|    INPUT     | String value |
+|    SELECT    | String value |
+
+@warning Use this method only in refreshCb/loadCb.
+@par Example for inner HTML (HTML)
+@code
+	<DIV id="div"/>
+@endcode
+@par Example for inner HTML (code)
+@code
+	void refreshCb(const char * url)
+	{
+		webServer.setArgString( F("div"), "Line 1 <br/> Line 2" );
+	}
+@endcode
+@par Example for string value (HTML)
+@code
+	<form>
+		<input name="input" type="text"/>
+		<input type="submit">
+	</form>
+@endcode
+@par Example for string value (code)
+@code
+	void loadCb(const char * url)
+	{
+		// sets the default value at loading
+		webServer.setArgString( F("input"), "This is the value" );
+	}
+@endcode
+*/
 void ELClientWebServer::setArgString(const __FlashStringHelper * name, const char * value)
 {
   const char * name_p = reinterpret_cast<const char *>(name);
@@ -256,6 +694,34 @@ void ELClientWebServer::setArgString(const __FlashStringHelper * name, const cha
   _elc->Request(buf, nlen+vlen+2);
 }
 
+
+/*! setArgBoolean(const char * name, uint8_t value)
+@brief Sets boolean value of a field
+@details Sets boolean value of an HTML field.
+@param name
+	The name of the field
+@param value 
+	Boolean value
+@par Supported HTML controls
+@li  INPUT
+@warning Use this method only in refreshCb/loadCb.
+@par Example HTML
+@code
+	<form>
+		<input name="input" type="checkbox"/>
+		<input type="submit">
+	</form>
+@endcode
+@par Example code
+@code
+	void loadCb(const char * url)
+	{
+		// sets the default value at loading
+		webServer.setArgBoolean( "input", TRUE );
+	}
+@endcode
+*/
+
 void ELClientWebServer::setArgBoolean(const char * name, uint8_t value)
 {
   uint8_t nlen = strlen(name);
@@ -265,6 +731,34 @@ void ELClientWebServer::setArgBoolean(const char * name, uint8_t value)
   buf[2 + nlen] = value;
   _elc->Request(buf, nlen+3);
 }
+
+
+/*! setArgBoolean(const __FlashStringHelper * name, uint8_t value)
+@brief Sets boolean value of a field
+@details Sets boolean value of an HTML field. It can free up RAM memory if string constants are stored in flash instead of RAM.
+@param name
+	The name of the field (stored in flash)
+@param value 
+	Boolean value
+@par Supported HTML controls
+@li  INPUT
+@warning Use this method only in refreshCb/loadCb.
+@par Example HTML
+@code
+	<form>
+		<input name="input" type="checkbox"/>
+		<input type="submit">
+	</form>
+@endcode
+@par Example code
+@code
+	void loadCb(const char * url)
+	{
+		// sets the default value at loading
+		webServer.setArgBoolean( F("input"), TRUE );
+	}
+@endcode
+*/
 
 void ELClientWebServer::setArgBoolean(const __FlashStringHelper * name, uint8_t value)
 {
@@ -278,6 +772,34 @@ void ELClientWebServer::setArgBoolean(const __FlashStringHelper * name, uint8_t 
   _elc->Request(buf, nlen+3);
 }
 
+
+/*! setArgInt(const char * name, int32_t value)
+@brief Sets integer value of a field
+@details Sets integer value of an HTML field.
+@param name
+	The name of the field
+@param value 
+	Integer value
+@par Supported HTML controls
+@li  INPUT
+@warning Use this method only in refreshCb/loadCb.
+@par Example HTML
+@code
+	<form>
+		<input name="input" type="number"/>
+		<input type="submit">
+	</form>
+@endcode
+@par Example code
+@code
+	void loadCb(const char * url)
+	{
+		// sets the default value at loading
+		webServer.setArgInt( "input", 123 );
+	}
+@endcode
+*/
+
 void ELClientWebServer::setArgInt(const char * name, int32_t value)
 {
   uint8_t nlen = strlen(name);
@@ -287,6 +809,34 @@ void ELClientWebServer::setArgInt(const char * name, int32_t value)
   memcpy(buf+2+nlen, &value, 4);
   _elc->Request(buf, nlen+6);
 }
+
+
+/*! setArgInt(const __FlashStringHelper * name, int32_t value)
+@brief Sets integer value of a field
+@details Sets integer value of an HTML field. It can free up RAM memory if string constants are stored in flash instead of RAM.
+@param name
+	The name of the field (stored in flash)
+@param value 
+	Integer value
+@par Supported HTML controls
+@li  INPUT
+@warning Use this method only in refreshCb/loadCb.
+@par Example HTML
+@code
+	<form>
+		<input name="input" type="number"/>
+		<input type="submit">
+	</form>
+@endcode
+@par Example code
+@code
+	void loadCb(const char * url)
+	{
+		// sets the default value at loading
+		webServer.setArgInt( F("input"), 123 );
+	}
+@endcode
+*/
 
 void ELClientWebServer::setArgInt(const __FlashStringHelper * name, int32_t value)
 {
@@ -300,6 +850,37 @@ void ELClientWebServer::setArgInt(const __FlashStringHelper * name, int32_t valu
   _elc->Request(buf, nlen+6);
 }
 
+
+/*! setArgNull(const char * name)
+@brief Sets null value to a field
+@details Sets null value to an HTML field.
+@param name
+	The name of the field
+@par Supported HTML controls
+@li P
+@li DIV
+@li TR
+@li TH
+@li TD
+@li TEXTAREA
+@li SPAN
+@li INPUT
+@li SELECT
+
+@warning Use this method only in refreshCb/loadCb.
+@par Example HTML
+@code
+	<DIV id="div"/>
+@endcode
+@par Example code
+@code
+	void refreshCb(const char * url)
+	{
+		webServer.setArgNull( "div" );
+	}
+@endcode
+*/
+
 void ELClientWebServer::setArgNull(const char * name)
 {
   uint8_t nlen = strlen(name);
@@ -308,6 +889,37 @@ void ELClientWebServer::setArgNull(const char * name)
   strcpy(buf+1, name);
   _elc->Request(buf, nlen+2);
 }
+
+
+/*! setArgNull(const __FlashStringHelper * name)
+@brief Sets null value to a field
+@details Sets null value to an HTML field. It can free up RAM memory if string constants are stored in flash instead of RAM.
+@param name
+	The name of the field (stored in flash)
+@par Supported HTML controls
+@li P
+@li DIV
+@li TR
+@li TH
+@li TD
+@li TEXTAREA
+@li SPAN
+@li INPUT
+@li SELECT
+
+@warning Use this method only in refreshCb/loadCb.
+@par Example HTML
+@code
+	<DIV id="div"/>
+@endcode
+@par Example code
+@code
+	void refreshCb(const char * url)
+	{
+		webServer.setArgNull( F("div") );
+	}
+@endcode
+*/
 
 void ELClientWebServer::setArgNull(const __FlashStringHelper * name)
 {
@@ -320,6 +932,34 @@ void ELClientWebServer::setArgNull(const __FlashStringHelper * name)
   _elc->Request(buf, nlen+2);
 }
 
+
+/*! setArgFloat(const char * name, float value)
+@brief Sets float value of a field
+@details Sets float value of an HTML field.
+@param name
+	The name of the field
+@param value 
+	Float value
+@par Supported HTML controls
+@li  INPUT
+@warning Use this method only in refreshCb/loadCb.
+@par Example HTML
+@code
+	<form>
+		<input name="input" type="number" step="0.01"/>
+		<input type="submit">
+	</form>
+@endcode
+@par Example code
+@code
+	void loadCb(const char * url)
+	{
+		// sets the default value at loading
+		webServer.setArgFloat( "input", 12.3f );
+	}
+@endcode
+*/
+
 void ELClientWebServer::setArgFloat(const char * name, float value)
 {
   uint8_t nlen = strlen(name);
@@ -329,6 +969,34 @@ void ELClientWebServer::setArgFloat(const char * name, float value)
   memcpy(buf+2+nlen, &value, 4);
   _elc->Request(buf, nlen+6);
 }
+
+
+/*! setArgFloat(const __FlashStringHelper * name, float value)
+@brief Sets float value of a field
+@details Sets float value of an HTML field. It can free up RAM memory if string constants are stored in flash instead of RAM.
+@param name
+	The name of the field (stored in flash)
+@param value 
+	Float value
+@par Supported HTML controls
+@li  INPUT
+@warning Use this method only in refreshCb/loadCb.
+@par Example HTML
+@code
+	<form>
+		<input name="input" type="number" step="0.01"/>
+		<input type="submit">
+	</form>
+@endcode
+@par Example code
+@code
+	void loadCb(const char * url)
+	{
+		// sets the default value at loading
+		webServer.setArgFloat( F("input"), 12.3f );
+	}
+@endcode
+*/
 
 void ELClientWebServer::setArgFloat(const __FlashStringHelper * name, float value)
 {
@@ -342,15 +1010,80 @@ void ELClientWebServer::setArgFloat(const __FlashStringHelper * name, float valu
   _elc->Request(buf, nlen+6);
 }
 
+/*! getArgInt()
+@brief Returns an HTML fields value as integer
+@details Returns an HTML fields value as integer. This method is used at setFieldCb. WebServer doesn't know the type of a field, every field arrives as string. 
+	This method converts the string to the expected type. Don't call this method outside of setFieldCb, otherwise it can reset/crash/freeze MCU.
+@return Integer value of the field
+@warning Use this method only in setFieldCb, otherwise crash, freeze, MCU reset, or other unexpected behaviour can happen.
+@par Example
+@code
+	int32_t int_value = 0;
+	
+	// this method should be fast to prevent UART receive buffer overrun
+	void setFieldCb(const char * field_str)
+	{
+		String field = field_str;
+		if( field == F("field_id") )
+		{
+			int_value = webServer.getArgInt();
+		}
+	}
+@endcode
+*/
+
 int32_t ELClientWebServer::getArgInt()
 {
   return (int32_t)atol(arg_ptr);
 }
 
+/*! getArgString()
+@brief Returns an HTML fields value as string
+@details Returns an HTML fields value as string. Don't call this method outside of setFieldCb, otherwise it can reset/crash/freeze MCU.
+@return String value of the field
+@warning Use this method only in setFieldCb, otherwise crash, freeze, MCU reset, or other unexpected behaviour can happen.
+@par Example
+@code
+	String str;
+	
+	// this method should be fast to prevent UART receive buffer overrun
+	void setFieldCb(const char * field_str)
+	{
+		String field = field_str;
+		if( field == F("field_id") )
+		{
+			str = webServer.getArgString();
+		}
+	}
+@endcode
+*/
+
 char * ELClientWebServer::getArgString()
 {
   return arg_ptr;
 }
+
+/*! getArgBoolean()
+@brief Returns an HTML fields value as boolean
+@details Returns an HTML fields value as boolean. This method is used at setFieldCb. WebServer doesn't know the type of a field, every field arrives as string. 
+	This method converts the string to the expected type. Don't call this method outside of setFieldCb, otherwise it can reset/crash/freeze MCU.
+@return Boolean value of the field
+@warning Use this method only in setFieldCb, otherwise crash, freeze, MCU reset, or other unexpected behaviour can happen.
+@par Example
+@code
+	uint8_t boolean_value;
+	
+	// this method should be fast to prevent UART receive buffer overrun
+	void setFieldCb(const char * field_str)
+	{
+		String field = field_str;
+		if( field == F("field_id") )
+		{
+			boolean_value = webServer.getArgBoolean();
+		}
+	}
+@endcode
+*/
 
 uint8_t ELClientWebServer::getArgBoolean()
 {
@@ -364,6 +1097,28 @@ uint8_t ELClientWebServer::getArgBoolean()
     return 1;
   return 0;
 }
+
+/*! getArgFloat()
+@brief Returns an HTML fields value as float
+@details Returns an HTML fields value as float. This method is used at setFieldCb. WebServer doesn't know the type of a field, every field arrives as string. 
+	This method converts the string to the expected type. Don't call this method outside of setFieldCb, otherwise it can reset/crash/freeze MCU.
+@return Float value of the field
+@warning Use this method only in setFieldCb, otherwise crash, freeze, MCU reset, or other unexpected behaviour can happen.
+@par Example
+@code
+	float float_value;
+	
+	// this method should be fast to prevent UART receive buffer overrun
+	void setFieldCb(const char * field_str)
+	{
+		String field = field_str;
+		if( field == F("field_id") )
+		{
+			float_value = webServer.getArgFloat();
+		}
+	}
+@endcode
+*/
 
 float ELClientWebServer::getArgFloat()
 {

@@ -24,7 +24,7 @@
 // - packet logging is slow and UART receive buffer can overrun (HTML form submission)
 ELClient esp(&Serial);
 
-// Initialize the MQTT client
+// Initialize the Web-Server client
 ELClientWebServer webServer(&esp);
 
 void ledPageLoadAndRefreshCb(const char * url)

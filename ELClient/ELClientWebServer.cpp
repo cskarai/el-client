@@ -294,11 +294,14 @@ void ELClientWebServer::processResponse(ELClientResponse *response)
 
   if( hnd == 0 ) // no handler found for the URL
   {
-    _elc->_debug->print(F("Handler not found for URL:"));
+    if( _elc->_debugEn )
+    {
+      _elc->_debug->print(F("Handler not found for URL:"));
     
-    for(int i=0; i < urlLen; i++)
-      _elc->_debug->print( url[i] );
-    _elc->_debug->println();
+      for(int i=0; i < urlLen; i++)
+        _elc->_debug->print( url[i] );
+      _elc->_debug->println();
+    }
     return;
   }
 
